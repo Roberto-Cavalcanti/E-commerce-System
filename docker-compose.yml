@@ -1,0 +1,20 @@
+services:
+  database:
+    image: mysql:latest
+    container_name: database
+    restart: always
+    environment:
+      ## Credencias do banco de dados
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: db
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - '3306:3306'
+    volumes:
+      - ecommerce-project-mysql:/var/lib/mysql
+      - ./sql_files:/docker-entrypoint-initdb.d
+volumes:
+    ecommerce-project-mysql:
