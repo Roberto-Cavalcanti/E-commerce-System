@@ -2,10 +2,13 @@ package com.project.ecommerce.services;
 
 import com.project.ecommerce.dto.ProductResponseDTO;
 import com.project.ecommerce.dto.ProductVariantResponseDTO;
+import com.project.ecommerce.models.ProductVariant;
 import com.project.ecommerce.models.Shop;
 import com.project.ecommerce.models.enums.Category;
 import com.project.ecommerce.repositories.ProductRepository;
 import com.project.ecommerce.repositories.ProductVariantRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +20,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
 
+    @Autowired
     public ProductService(ProductRepository productRepository, ProductVariantRepository productVariantRepository) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
@@ -65,7 +69,7 @@ public class ProductService {
                 )).collect(Collectors.toList());
     }
 
-    public List<ProductResponseDTO> filterProductsByShop(Long shopId) {
+    public List<ProductResponseDTO> filterProductsByShop(Shop shopId) {
         return productRepository.findProductsByShop(shopId).stream()
                 .map(product -> new ProductResponseDTO(
                         product.getId(),
@@ -83,7 +87,26 @@ public class ProductService {
                 .map(productVariant -> new ProductVariantResponseDTO(
                         productVariant.getId(),
                         productVariant.getSize(),
-                        productVariant.getStockItem().getQuantity()
+                        productVariant.getQuantity()
                 )).collect(Collectors.toList());
+    }
+
+    public void checkStockAvailability(Long variantId, Integer requestedQuantity) {
+        ProductVariant productVariant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new EntityNotFoundException("Variant not found in stock"));
+        if (productVariant.getQuantity() < requestedQuantity) {
+            throw new IllegalStateException("Insufficient stock for variant ID " + variantId);
+        }
+    }
+
+    public void updateStock(Long variantId, Integer quantityToRemove) {
+        ProductVariant productVariant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new EntityNotFoundException("Variant not found in stock"));
+        int newQuantity = productVariant.getQuantity() - quantityToRemove;
+        if (newQuantity < 0) {
+            throw new IllegalStateException("Cannot reduce stock below zero");
+        }
+        productVariant.setQuantity(newQuantity);
+        productVariantRepository.save(productVariant);
     }
 }

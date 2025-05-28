@@ -7,7 +7,6 @@ import com.project.ecommerce.models.*;
 import com.project.ecommerce.models.enums.OrderStatus;
 import com.project.ecommerce.repositories.OrderRepository;
 import com.project.ecommerce.repositories.ProductVariantRepository;
-import com.project.ecommerce.repositories.StockItemRepository;
 import com.project.ecommerce.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,9 +35,6 @@ class CartServiceTest {
     private ProductVariantRepository productVariantRepository;
 
     @Mock
-    private StockItemRepository stockItemRepository;
-
-    @Mock
     private UserRepository userRepository;
 
     @InjectMocks
@@ -47,7 +43,6 @@ class CartServiceTest {
     private User user;
     private Product product;
     private ProductVariant variant;
-    private StockItem stockItem;
     private AddCartItemRequestDTO request;
 
     @BeforeEach
@@ -67,11 +62,7 @@ class CartServiceTest {
         variant.setId(1L);
         variant.setSize("M");
         variant.setProduct(product);
-
-        stockItem = new StockItem();
-        stockItem.setId(1L);
-        stockItem.setVariant(variant);
-        stockItem.setQuantity(10);
+        variant.setQuantity(10);
 
         request = new AddCartItemRequestDTO(1L, 2); // variantId = 1, quantity = 2
     }
@@ -83,7 +74,6 @@ class CartServiceTest {
         when(orderRepository.findByUserIdAndStatus(1L, OrderStatus.AGUARDANDO_PAGAMENTO))
                 .thenReturn(Optional.empty());
         when(productVariantRepository.findById(1L)).thenReturn(Optional.of(variant));
-        when(stockItemRepository.findByVariantId(1L)).thenReturn(Optional.of(stockItem));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
             Order order = invocation.getArgument(0);
             order.setId(1L); // Simular ID gerado
@@ -119,7 +109,6 @@ class CartServiceTest {
         verify(orderRepository, times(1)).save(any(Order.class));
         verify(userRepository, times(1)).findByEmail("test@example.com");
         verify(productVariantRepository, times(1)).findById(1L);
-        verify(stockItemRepository, times(1)).findByVariantId(1L);
     }
 
     @Test
@@ -143,7 +132,6 @@ class CartServiceTest {
         when(orderRepository.findByUserIdAndStatus(1L, OrderStatus.AGUARDANDO_PAGAMENTO))
                 .thenReturn(Optional.of(cart));
         when(productVariantRepository.findById(1L)).thenReturn(Optional.of(variant));
-        when(stockItemRepository.findByVariantId(1L)).thenReturn(Optional.of(stockItem));
         when(orderRepository.save(any(Order.class))).thenReturn(cart);
 
         // Executar o método
@@ -171,7 +159,7 @@ class CartServiceTest {
         assertEquals("User not found. User need be logged in.", exception.getMessage());
 
         // Verificar que outros repositórios não foram chamados
-        verifyNoInteractions(orderRepository, productVariantRepository, stockItemRepository);
+        verifyNoInteractions(orderRepository, productVariantRepository);
     }
 
     @Test
@@ -191,35 +179,33 @@ class CartServiceTest {
         verify(userRepository, times(1)).findByEmail("test@example.com");
         verify(orderRepository, times(1)).findByUserIdAndStatus(1L, OrderStatus.AGUARDANDO_PAGAMENTO);
         verify(productVariantRepository, times(1)).findById(1L);
-        verifyNoInteractions(stockItemRepository);
+//        verifyNoInteractions();
     }
 
     @Test
-    void addItemToCart_StockItemNotFound_ThrowsException() {
+    void addItemToCart_ProductVariantNotFound_ThrowsException() {
         // Configurar mocks
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(orderRepository.findByUserIdAndStatus(1L, OrderStatus.AGUARDANDO_PAGAMENTO))
                 .thenReturn(Optional.empty());
         when(productVariantRepository.findById(1L)).thenReturn(Optional.of(variant));
-        when(stockItemRepository.findByVariantId(1L)).thenReturn(Optional.empty());
 
         // Verificar exceção
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
                 () -> cartService.addItemToCart(request));
-        assertEquals("Stock item not found", exception.getMessage());
+        assertEquals("product variant item not found", exception.getMessage());
     }
 
     @Test
     void addItemToCart_InsufficientStock_ThrowsException() {
         // Configurar stock com quantidade insuficiente
-        stockItem.setQuantity(1); // Menos que a quantidade solicitada (2)
+        variant.setQuantity(1); // Menos que a quantidade solicitada (2)
 
         // Configurar mocks
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(orderRepository.findByUserIdAndStatus(1L, OrderStatus.AGUARDANDO_PAGAMENTO))
                 .thenReturn(Optional.empty());
         when(productVariantRepository.findById(1L)).thenReturn(Optional.of(variant));
-        when(stockItemRepository.findByVariantId(1L)).thenReturn(Optional.of(stockItem));
 
         // Verificar exceção
         IllegalStateException exception = assertThrows(IllegalStateException.class,

@@ -19,6 +19,7 @@ public class ProductVariant {
     @NotNull
     private Product product;
 
-    @OneToOne(mappedBy = "variant")
-    private StockItem stockItem;
+    @NotNull
+    @PositiveOrZero
+    private Integer quantity;
 }

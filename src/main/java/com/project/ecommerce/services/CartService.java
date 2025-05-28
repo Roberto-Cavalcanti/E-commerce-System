@@ -5,9 +5,9 @@ import com.project.ecommerce.dto.CartItemDTO;
 import com.project.ecommerce.dto.CartResponseDTO;
 import com.project.ecommerce.models.*;
 import com.project.ecommerce.models.enums.OrderStatus;
+import com.project.ecommerce.models.enums.States;
 import com.project.ecommerce.repositories.OrderRepository;
 import com.project.ecommerce.repositories.ProductVariantRepository;
-import com.project.ecommerce.repositories.StockItemRepository;
 import com.project.ecommerce.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -21,18 +21,15 @@ import java.util.stream.Collectors;
 public class CartService {
     private final OrderRepository orderRepository;
     private final ProductVariantRepository productVariantRepository;
-    private final StockItemRepository stockItemRepository;//del
     private final UserRepository userRepository;
 
     public CartService(OrderRepository orderRepository,
                        ProductVariantRepository productVariantRepository,
-                       StockItemRepository stockItemRepository,//del
                        UserRepository userRepository) {
 
 
         this.orderRepository = orderRepository;
         this.productVariantRepository = productVariantRepository;
-        this.stockItemRepository = stockItemRepository;//del
         this.userRepository = userRepository;
     }
 
@@ -58,9 +55,7 @@ public class CartService {
                 .orElseThrow(() -> new EntityNotFoundException("Product variant not found"));
 
         // Verificar estoque
-        StockItem stockItem = stockItemRepository.findByVariantId(request.variantId())//del
-                .orElseThrow(() -> new EntityNotFoundException("Stock item not found"));//del
-        if (stockItem.getQuantity() < request.quantity()) {//update
+        if (variant.getQuantity() < request.quantity()) {//update
             throw new IllegalStateException("Insufficient stock for variant ID " + request.variantId());
         }
 

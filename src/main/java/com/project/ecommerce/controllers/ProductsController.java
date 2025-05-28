@@ -5,7 +5,6 @@ import com.project.ecommerce.dto.SearchProductDTO;
 import com.project.ecommerce.exceptions.ProductServiceException;
 import com.project.ecommerce.models.enums.Category;
 import com.project.ecommerce.services.ProductService;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
