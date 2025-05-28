@@ -21,18 +21,18 @@ import java.util.stream.Collectors;
 public class CartService {
     private final OrderRepository orderRepository;
     private final ProductVariantRepository productVariantRepository;
-    private final StockItemRepository stockItemRepository;
+    private final StockItemRepository stockItemRepository;//del
     private final UserRepository userRepository;
 
     public CartService(OrderRepository orderRepository,
                        ProductVariantRepository productVariantRepository,
-                       StockItemRepository stockItemRepository,
+                       StockItemRepository stockItemRepository,//del
                        UserRepository userRepository) {
 
 
         this.orderRepository = orderRepository;
         this.productVariantRepository = productVariantRepository;
-        this.stockItemRepository = stockItemRepository;
+        this.stockItemRepository = stockItemRepository;//del
         this.userRepository = userRepository;
     }
 
@@ -58,9 +58,9 @@ public class CartService {
                 .orElseThrow(() -> new EntityNotFoundException("Product variant not found"));
 
         // Verificar estoque
-        StockItem stockItem = stockItemRepository.findByVariantId(request.variantId())
-                .orElseThrow(() -> new EntityNotFoundException("Stock item not found"));
-        if (stockItem.getQuantity() < request.quantity()) {
+        StockItem stockItem = stockItemRepository.findByVariantId(request.variantId())//del
+                .orElseThrow(() -> new EntityNotFoundException("Stock item not found"));//del
+        if (stockItem.getQuantity() < request.quantity()) {//update
             throw new IllegalStateException("Insufficient stock for variant ID " + request.variantId());
         }
 

@@ -21,6 +21,7 @@ public class Shop {
     private String name;
 
     @NotNull
+    @Column(unique = true)
     @Pattern(regexp = "\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}", message = "Invalid CNPJ format")
     private String CNPJ;
 
