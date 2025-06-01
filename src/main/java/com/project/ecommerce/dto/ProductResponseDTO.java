@@ -1,15 +1,8 @@
 package com.project.ecommerce.dto;
 
-import com.project.ecommerce.models.enums.Category;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
-public record ProductResponseDTO(
-        Long id,
-        @NotNull String name,
-        String description,
-        @NotNull @Positive BigDecimal price,
-        String image,
-        String categoryName,
-        String shopName
-) {}
+public record ProductResponseDTO(Long id, @NotNull String name, String description, @NotNull @Positive BigDecimal price, String image, String categoryName, String shopName) {
+}

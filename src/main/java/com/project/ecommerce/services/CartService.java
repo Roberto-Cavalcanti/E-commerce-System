@@ -1,12 +1,12 @@
 package com.project.ecommerce.services;
 
-import com.project.ecommerce.dto.AddCartItemRequestDTO;
-import com.project.ecommerce.dto.CartItemDTO;
+import com.project.ecommerce.dto.OrderItemRequestDTO;
+import com.project.ecommerce.dto.OrderItemDTO;
 import com.project.ecommerce.dto.CartResponseDTO;
+import com.project.ecommerce.dto.UserDTO;
 import com.project.ecommerce.models.*;
 import com.project.ecommerce.models.enums.OrderStatus;
-import com.project.ecommerce.models.enums.States;
-import com.project.ecommerce.repositories.OrderRepository;
+import com.project.ecommerce.repositories.CartRepository;
 import com.project.ecommerce.repositories.ProductVariantRepository;
 import com.project.ecommerce.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,45 +19,43 @@ import java.util.stream.Collectors;
 
 @Service
 public class CartService {
-    private final OrderRepository orderRepository;
+    private final CartRepository cartRepository;
     private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
+    private final ProductService productService;
 
-    public CartService(OrderRepository orderRepository,
+
+    public CartService(CartRepository cartRepository,
                        ProductVariantRepository productVariantRepository,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       ProductService productService) {
 
 
-        this.orderRepository = orderRepository;
+        this.cartRepository = cartRepository;
         this.productVariantRepository = productVariantRepository;
         this.userRepository = userRepository;
+        this.productService = productService;
     }
 
     @Transactional
-    public CartResponseDTO addItemToCart(AddCartItemRequestDTO request) {//, Authentication authentication
-        // Obter o usuário autenticado (assumindo que o email está no principal)
-//        String userEmail = authentication.email();
-        User user = userRepository.findByEmail("test@example.com")
-                .orElseThrow(() -> new EntityNotFoundException("User not found. User need be logged in.")); // Substitua por uma busca no UserRepository
-//        user.setEmail(userEmail); // Simulação; use userRepository.findByEmail
+    public void addItemToCart(OrderItemRequestDTO request, UserDTO userDTO) {
+        User user = userRepository.findByEmail(userDTO.email())
+                .orElseThrow(() -> new EntityNotFoundException("User not found. User need be logged in."));
 
         // Verificar se existe um carrinho (pedido com status AGUARDANDO_PAGAMENTO)
-        Order cart = orderRepository.findByUserIdAndStatus(user.getId(), OrderStatus.AGUARDANDO_PAGAMENTO)
+        Cart cart = cartRepository.findByUserIdAndStatus(user.getId(), OrderStatus.AGUARDANDO_PAGAMENTO)
                 .orElseGet(() -> {
-                    Order newCart = new Order();
+                    Cart newCart = new Cart();
                     newCart.setUser(user);
                     newCart.setStatus(OrderStatus.AGUARDANDO_PAGAMENTO);
-                    return orderRepository.save(newCart);
+                    return cartRepository.save(newCart);
                 });
 
-        // Verificar a variante do produto
+        // Verificar a variante do produto e estoque
         ProductVariant variant = productVariantRepository.findById(request.variantId())
-                .orElseThrow(() -> new EntityNotFoundException("Product variant not found"));
+                        .orElseThrow( () -> new EntityNotFoundException("Variant product not found."));
 
-        // Verificar estoque
-        if (variant.getQuantity() < request.quantity()) {//update
-            throw new IllegalStateException("Insufficient stock for variant ID " + request.variantId());
-        }
+        productService.checkStockAvailability(variant.getId(), request.quantity());
 
         // Adicionar ou atualizar item no carrinho
         OrderItem orderItem = cart.getItems().stream()
@@ -65,42 +63,50 @@ public class CartService {
                 .findFirst()
                 .orElseGet(() -> {
                     OrderItem newItem = new OrderItem();
-                    newItem.setOrder(cart);
+                    newItem.setCart(cart);
                     newItem.setVariant(variant);
                     cart.getItems().add(newItem);
                     return newItem;
                 });
-
         orderItem.setQuantity(request.quantity());
-        orderRepository.save(cart);
-
-        // Retornar o carrinho atualizado
-        return buildCartResponse(cart);
+        cartRepository.save(cart);
     }
 
-    private CartResponseDTO buildCartResponse(Order cart) {
-        List<CartItemDTO> cartItems = cart.getItems().stream()
-                .map(item -> new CartItemDTO(
+    public CartResponseDTO buildCartResponse(User user) {
+        Cart cart = cartRepository.findByUserIdAndStatus(user.getId(), OrderStatus.AGUARDANDO_PAGAMENTO)
+                .orElseThrow( () -> new EntityNotFoundException("User not found. User need be logged in."));
+        List<OrderItemDTO> cartItems = cart.getItems().stream()
+                .map(item -> new OrderItemDTO(
                         item.getVariant().getId(),
                         item.getVariant().getProduct().getName(),
                         item.getVariant().getSize(),
                         item.getQuantity(),
-                        item.getVariant().getProduct().getPrice(),
-                        item.getVariant().getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
+                        item.getVariant().getProduct().getStartingPrice(),
+                        item.getVariant().getProduct().getStartingPrice().multiply(BigDecimal.valueOf(item.getQuantity())),
+                        item.getShippingPrice()
                 ))
                 .collect(Collectors.toList());
 
+        BigDecimal totalShipping = cartItems.stream()
+                .map(OrderItemDTO::shipping)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         BigDecimal totalPrice = cartItems.stream()
-                .map(CartItemDTO::totalItemPrice)
+                .map(OrderItemDTO::totalItemPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .add(cart.getShippingPrice());
+                .add(totalShipping);
 
         return new CartResponseDTO(
                 cart.getId(),
                 cart.getUser().getName(),
                 cartItems,
-                cart.getShippingPrice(),
+                totalShipping,
                 totalPrice
         );
+    }
+
+    public void deleteItemFromCart(OrderItemDTO request) {
+        cartRepository.findById(request.variantId())
+                .ifPresent( cartRepository::delete );
     }
 }

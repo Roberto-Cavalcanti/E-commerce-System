@@ -29,7 +29,7 @@ public class Product {
 
     @NotNull
     @Positive
-    private BigDecimal price;
+    private BigDecimal startingPrice;
 
     @Size(max = 255)
     private String image;

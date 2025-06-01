@@ -32,7 +32,7 @@ public class ProductService {
                         product.getId(),
                         product.getName(),
                         product.getDescription(),
-                        product.getPrice(),
+                        product.getStartingPrice(),
                         product.getImage(),
                         product.getCategory() != null ? product.getCategory().toString() : null,
                         product.getShop().getName()
@@ -48,7 +48,7 @@ public class ProductService {
                         product.getId(),
                         product.getName(),
                         product.getDescription(),
-                        product.getPrice(),
+                        product.getStartingPrice(),
                         product.getImage(),
                         product.getCategory() != null ? product.getCategory().toString() : null,
                         product.getShop().getName()
@@ -62,7 +62,7 @@ public class ProductService {
                         product.getId(),
                         product.getName(),
                         product.getDescription(),
-                        product.getPrice(),
+                        product.getStartingPrice(),
                         product.getImage(),
                         product.getCategory() != null ? product.getCategory().toString() : null,
                         product.getShop().getName()
@@ -75,7 +75,7 @@ public class ProductService {
                         product.getId(),
                         product.getName(),
                         product.getDescription(),
-                        product.getPrice(),
+                        product.getStartingPrice(),
                         product.getImage(),
                         product.getCategory() != null ? product.getCategory().toString() : null,
                         product.getShop().getName()
@@ -87,6 +87,7 @@ public class ProductService {
                 .map(productVariant -> new ProductVariantResponseDTO(
                         productVariant.getId(),
                         productVariant.getSize(),
+                        productVariant.getPrice(),
                         productVariant.getQuantity()
                 )).collect(Collectors.toList());
     }

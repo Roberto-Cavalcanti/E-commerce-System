@@ -3,6 +3,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Entity
 public class ProductVariant {
@@ -18,6 +20,10 @@ public class ProductVariant {
     @JoinColumn(name = "product_id")
     @NotNull
     private Product product;
+
+    @NotNull
+    @Positive
+    private BigDecimal price;
 
     @NotNull
     @PositiveOrZero

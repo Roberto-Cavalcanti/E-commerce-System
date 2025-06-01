@@ -1,4 +1,6 @@
 package com.project.ecommerce.dto;
 
-public record ProductVariantResponseDTO(Long id, String size, int quantity ) {
+import java.math.BigDecimal;
+
+public record ProductVariantResponseDTO(Long variantId, String size, BigDecimal price, Integer quantity) {
 }

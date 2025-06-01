@@ -6,7 +6,7 @@ import java.util.List;
 public record CartResponseDTO(
         Long orderId,
         String userName,
-        List<CartItemDTO> items,
-        BigDecimal shippingPrice,
+        List<OrderItemDTO> items,
+        BigDecimal shipping,
         BigDecimal totalPrice
 ) {}

@@ -3,7 +3,10 @@ package com.project.ecommerce.dto;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-public record AddCartItemRequestDTO(
+import java.math.BigDecimal;
+
+public record OrderItemRequestDTO(
         @NotNull Long variantId,
-        @NotNull @Positive Integer quantity
+        @NotNull @Positive Integer quantity,
+        BigDecimal shipping
 ) {}
